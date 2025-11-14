@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>The Last Bell — Playable Demo</title>
+    <style>
+      :root {
+        --bg: #f5f5f7;
+        --panel: #ffffff;
+        --text: #111;
+        --accent-warm: #ffd8a6;
+        --accent-cool: #d0e8ff;
+      }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+      .center {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        flex-direction: column;
+      }
+      .game-wrap {
+        width: 920px;
+        max-width: 96%;
+        height: 620px;
+        background: linear-gradient(180deg, #fff, #f2f2f5);
+        box-shadow: 0 10px 30px rgba(20, 20, 40, 0.08);
+        border-radius: 14px;
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+      }
+      header {
+        padding: 18px 22px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
+      .title {
+        font-weight: 700;
+        font-size: 18px;
+      }
+      .meta {
+        font-size: 13px;
+        color: #666;
+      }
+      main.scene {
+        flex: 1;
+        display: flex;
+        padding: 24px;
+        gap: 18px;
+        align-items: flex-end;
+      }
+      .visual {
+        flex: 1;
+        border-radius: 10px;
+        background: linear-gradient(180deg, #e9eef7, #f7f5f2);
+        height: 100%;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+      .visual .mood-overlay {
+        position: absolute;
+        inset: 0;
+        transition: background 0.6s ease;
+      }
+      .visual img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .ui-panel {
+        width: 420px;
+        background: var(--panel);
+        border-radius: 10px;
+        padding: 18px;
+        box-shadow: 0 6px 14px rgba(15, 15, 25, 0.06);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .dialogue {
+        min-height: 140px;
+        font-size: 16px;
+        line-height: 1.4;
+        color: #111;
+      }
+      .choices {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .choice {
+        background: #f0f3f6;
+        border-radius: 8px;
+        padding: 12px 14px;
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: all 0.18s;
+        font-weight: 600;
+      }
+      .choice:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 18px rgba(20, 20, 40, 0.06);
+      }
+      .controls {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+      }
+      button.btn {
+        background: #111;
+        color: #fff;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 700;
+      }
+      .small {
+        background: #fff;
+        color: #111;
+        border: 1px solid #ddd;
+        padding: 6px 10px;
+        font-weight: 600;
+      }
+      .overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(10, 10, 10, 0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 20;
+      }
+      .menu {
+        background: #fff;
+        padding: 26px;
+        border-radius: 12px;
+        width: 480px;
+        box-shadow: 0 30px 80px rgba(10, 10, 30, 0.25);
+        text-align: left;
+      }
+      .menu h2 {
+        margin: 0 0 10px 0;
+      }
+      .menu p {
+        color: #444;
+        margin-top: 0;
+      }
+      .settings-row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin: 8px 0;
+      }
+      .end-screen {
+        padding: 30px;
+        text-align: center;
+      }
+      footer {
+        padding: 12px 18px;
+        font-size: 13px;
+        color: #666;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .hint {
+        font-size: 13px;
+        color: #777;
+      }
+      .sr-only {
+        position: absolute;
+        left: -10000px;
+        top: auto;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+      }
+      /* responsive */
+      @media (max-width: 720px) {
+        .game-wrap {
+          height: 92vh;
+        }
+        .ui-panel {
+          width: 360px;
+        }
+        .visual {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="center">
+      <div class="game-wrap" id="game">
+        <header>
+          <div>
+            <div class="title">The Last Bell</div>
+            <div class="meta">Slice-of-Life</div>
+          </div>
+          <div class="controls">
+            <button id="muteBtn" class="small">Sound: On</button>
+            <button id="pauseBtn" class="small">Menu</button>
+          </div>
+        </header>
+
+        <main class="scene" id="scene">
+          <div class="visual">
+            <div class="mood-overlay" id="mood"></div>
+            <img src="Asia.png" alt="Ari Character Image" />
+          </div>
+
+          <aside class="ui-panel" id="ui">
+            <div class="dialogue" role="log" aria-live="polite" id="dialogue">
+              Press <strong>Start</strong> to begin the day.
+            </div>
+            <div class="choices" id="choices" aria-hidden="true"></div>
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 10px;
+              "
+            >
+              <div class="hint">
+                Tip: Choose carefully — choices affect mood & endings.
+              </div>
+              <div>
+                <button id="startBtn" class="btn">Start</button>
+                <button id="nextBtn" class="btn" style="display: none">
+                  Next
+                </button>
+              </div>
+            </div>
+          </aside>
+        </main>
+
+        <footer></footer>
+
+        <!-- Pause/Menu Overlay -->
+        <div class="overlay" id="menuOverlay" style="display: none">
+          <div
+            class="menu"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="menuTitle"
+          >
+            <h2 id="menuTitle">Menu</h2>
+            <p>Paused — adjust settings or resume.</p>
+            <div class="settings-row">
+              <label>Text size:</label>
+              <select id="textSize">
+                <option value="14">Small</option>
+                <option value="16" selected>Normal</option>
+                <option value="18">Large</option>
+              </select>
+            </div>
+            <div class="settings-row">
+              <label>Sound:</label>
+              <button id="menuMute" class="small">Toggle Sound</button>
+            </div>
+            <div
+              style="
+                display: flex;
+                gap: 8px;
+                margin-top: 14px;
+                justify-content: flex-end;
+              "
+            >
+              <button id="resumeBtn" class="btn">Resume</button>
+              <button id="restartBtn" class="small">Restart</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Start Overlay -->
+        <div
+          class="overlay"
+          id="startOverlay"
+          style="
+            background: linear-gradient(
+              rgba(10, 10, 30, 0.55),
+              rgba(10, 10, 30, 0.55)
+            );
+          "
+        >
+          <div class="menu" style="text-align: center">
+            <h2>Welcome to <strong>The Last Bell</strong></h2>
+            <p>
+              A short interactive slice-of-life about choices, honesty, and
+              growth.
+            </p>
+            <div style="margin-top: 18px">
+              <button id="overlayStart" class="btn">Start the Day</button>
+              <button id="overlayHow" class="small">How to Play</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- End Overlay -->
+        <div class="overlay" id="endOverlay" style="display: none">
+          <div class="menu end-screen" id="endScreen">
+            <h2 id="endTitle">Ending</h2>
+            <p id="endText"></p>
+            <div
+              style="
+                margin-top: 18px;
+                display: flex;
+                gap: 8px;
+                justify-content: center;
+              "
+            >
+              <button id="endRestart" class="btn">Play Again</button>
+              <button id="endMenu" class="small">Exit</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Game data & branching logic
+      const state = {
+        sound: true,
+        mood: "neutral", // 'warm' or 'cool'
+        path: null,
+        ended: false,
+        steps: 0,
+      };
+
+      const scenes = {
+        start: {
+          text: "It’s 7:45 AM. The hallway buzzes. Asia stares at unfinished project notes. Mira: 'Asia, where are you? We need your final part for the project presentation.'",
+          choices: [
+            { id: "honest", text: "Tell Mira the truth: I didn't finish." },
+            { id: "lie", text: "Lie: 'I'm on the way with it!'" },
+          ],
+        },
+        honest_follow: {
+          text: "Mira sounds frustrated but relieved by your honesty. 'Okay... at least tell me how we'll fix this.'",
+          choices: [
+            { id: "ask_help", text: "Ask for help finishing it together." },
+            {
+              id: "confess_prof",
+              text: "Offer to take full responsibility with the professor.",
+            },
+          ],
+        },
+        lie_follow: {
+          text: "You promise you have it and rush in. When the group realizes you didn't finish, Mira looks betrayed.",
+          choices: [
+            { id: "make_excuse", text: "Try to talk your way out of it." },
+            {
+              id: "apologize",
+              text: "Apologize sincerely and admit the mistake.",
+            },
+          ],
+        },
+        endings: {
+          A1: {
+            title: "Supported Growth",
+            text: "You and Mira finish the project together. The professor grants partial credit. You learned the value of honesty and collaboration.",
+            tone: "warm",
+          },
+          A2: {
+            title: "Accountability",
+            text: "You confess to the professor. The project fails, but you get a make-up task. Mira forgives you after a hard talk.",
+            tone: "warm",
+          },
+          B1: {
+            title: "Broken Trust",
+            text: "Mira refuses to work with you again. The project fails. You reflect on how small lies grew into broken trust.",
+            tone: "cool",
+          },
+          B2: {
+            title: "Redemption",
+            text: "You apologize; the team helps salvage the project enough to pass. You begin rebuilding trust through humility.",
+            tone: "neutral",
+          },
+        },
+      };
+
+      // DOM refs
+      const dialogue = document.getElementById("dialogue");
+      const choicesEl = document.getElementById("choices");
+      const startBtn = document.getElementById("startBtn");
+      const nextBtn = document.getElementById("nextBtn");
+      const startOverlay = document.getElementById("startOverlay");
+      const overlayStart = document.getElementById("overlayStart");
+      const overlayHow = document.getElementById("overlayHow");
+      const menuOverlay = document.getElementById("menuOverlay");
+      const pauseBtn = document.getElementById("pauseBtn");
+      const resumeBtn = document.getElementById("resumeBtn");
+      const restartBtn = document.getElementById("restartBtn");
+      const endOverlay = document.getElementById("endOverlay");
+      const endTitle = document.getElementById("endTitle");
+      const endText = document.getElementById("endText");
+      const endRestart = document.getElementById("endRestart");
+      const endMenu = document.getElementById("endMenu");
+      const moodOverlay = document.getElementById("mood");
+      const muteBtn = document.getElementById("muteBtn");
+      const menuMute = document.getElementById("menuMute");
+      const textSize = document.getElementById("textSize");
+
+      // Audio: use WebAudio simple tones for cues
+      let audioCtx = null;
+      function beep(freq = 440, duration = 0.12, vol = 0.02) {
+        if (!state.sound) return;
+        if (!audioCtx)
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.type = "sine";
+        o.frequency.value = freq;
+        g.gain.value = vol;
+        o.connect(g);
+        g.connect(audioCtx.destination);
+        o.start();
+        setTimeout(() => {
+          o.stop();
+        }, duration * 1000);
+      }
+
+      // UI helpers
+      function setDialogue(text) {
+        dialogue.innerHTML = text;
+      }
+      function clearChoices() {
+        choicesEl.innerHTML = "";
+        choicesEl.setAttribute("aria-hidden", "true");
+      }
+      function showChoices(list) {
+        clearChoices();
+        choicesEl.setAttribute("aria-hidden", "false");
+        list.forEach((c) => {
+          const b = document.createElement("button");
+          b.className = "choice";
+          b.textContent = c.text;
+          b.onclick = () => handleChoice(c.id);
+          choicesEl.appendChild(b);
+        });
+      }
+      function setMood(tone) {
+        state.mood = tone;
+        if (tone === "warm")
+          moodOverlay.style.background =
+            "linear-gradient(rgba(255,210,150,0.18), rgba(255,240,220,0.06))";
+        else if (tone === "cool")
+          moodOverlay.style.background =
+            "linear-gradient(rgba(160,200,255,0.14), rgba(220,235,255,0.04))";
+        else
+          moodOverlay.style.background =
+            "linear-gradient( rgba(255,255,255,0), rgba(255,255,255,0))";
+      }
+
+      // Game flow
+      function startGame() {
+        startOverlay.style.display = "none";
+        state.path = null;
+        state.ended = false;
+        state.steps = 0;
+        setMood("neutral");
+        goToScene("start");
+        beep(880, 0.08, 0.03);
+      }
+
+      function goToScene(key) {
+        state.steps++;
+        if (key === "start") {
+          setDialogue(scenes.start.text);
+          showChoices(scenes.start.choices);
+        } else if (key === "honest") {
+          // path A
+          state.path = "A";
+          setMood("warm");
+          beep(660, 0.08, 0.03);
+          setDialogue(scenes.honest_follow.text);
+          showChoices(scenes.honest_follow.choices);
+        } else if (key === "lie") {
+          state.path = "B";
+          setMood("cool");
+          beep(220, 0.12, 0.04);
+          setDialogue(scenes.lie_follow.text);
+          showChoices(scenes.lie_follow.choices);
+        }
+      }
+
+      function handleChoice(choiceId) {
+        // lock choices momentarily
+        clearChoices();
+        // small delay to mimic reading & emotional weight
+        setTimeout(() => {
+          if (choiceId === "honest" || choiceId === "lie") {
+            goToScene(choiceId);
+            return;
+          }
+          // Branch A outcomes
+          if (choiceId === "ask_help") {
+            endGame("A1");
+            return;
+          }
+          if (choiceId === "confess_prof") {
+            endGame("A2");
+            return;
+          }
+          // Branch B outcomes
+          if (choiceId === "make_excuse") {
+            endGame("B1");
+            return;
+          }
+          if (choiceId === "apologize") {
+            endGame("B2");
+            return;
+          }
+        }, 450);
+      }
+
+      function endGame(code) {
+        state.ended = true;
+        const e = scenes.endings[code];
+        // mood & audio
+        setMood(
+          e.tone === "warm" ? "warm" : e.tone === "cool" ? "cool" : "neutral"
+        );
+        if (e.tone === "warm") beep(880, 0.12, 0.04);
+        else if (e.tone === "cool") beep(160, 0.12, 0.04);
+        else beep(520, 0.1, 0.03);
+        // show ending overlay
+        endTitle.innerText = e.title;
+        endText.innerText = e.text;
+        endOverlay.style.display = "flex";
+      }
+
+      overlayStart.addEventListener("click", startGame);
+      startBtn.addEventListener("click", startGame);
+
+      overlayHow.addEventListener("click", () => {
+        alert(
+          "How to play: Read the scene. Click the choices that feel right. Your choices affect mood, visuals, and the ending. There are 2 major decision points and 4 possible endings. Use Menu to pause and change text size or sound."
+        );
+      });
+
+      pauseBtn.addEventListener("click", () => {
+        menuOverlay.style.display = "flex";
+      });
+      resumeBtn.addEventListener("click", () => {
+        menuOverlay.style.display = "none";
+      });
+      restartBtn.addEventListener("click", () => {
+        menuOverlay.style.display = "none";
+        startGame();
+      });
+
+      endRestart.addEventListener("click", () => {
+        endOverlay.style.display = "none";
+        startGame();
+      });
+      endMenu.addEventListener("click", () => {
+        endOverlay.style.display = "none";
+        startOverlay.style.display = "flex";
+      });
+
+      muteBtn.addEventListener("click", () => {
+        toggleSound();
+      });
+      menuMute.addEventListener("click", () => {
+        toggleSound();
+      });
+
+      function toggleSound() {
+        state.sound = !state.sound;
+        muteBtn.textContent = "Sound: " + (state.sound ? "On" : "Off");
+        menuMute.textContent = "Sound: " + (state.sound ? "On" : "Off");
+      }
+
+      // Accessibility: text size
+      textSize.addEventListener("change", () => {
+        const sz = parseInt(textSize.value, 10);
+        dialogue.style.fontSize = sz + "px";
+      });
+
+      // Quick keyboard controls
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          menuOverlay.style.display =
+            menuOverlay.style.display === "flex" ? "none" : "flex";
+        }
+      });
+
+      // initialize UI labels
+      muteBtn.textContent = "Sound: On";
+      menuMute.textContent = "Sound: On";
+
+      // Start overlay shows by default; allow immediate start with space
+      document.addEventListener("keydown", (e) => {
+        if (e.code === "Space" && startOverlay.style.display !== "none") {
+          startGame();
+        }
+      });
+
+      // small polish: click choice by Enter when focused
+      choicesEl.addEventListener("keydown", (e) => {
+        if (
+          e.key === "Enter" &&
+          document.activeElement.classList.contains("choice")
+        ) {
+          document.activeElement.click();
+        }
+      });
+    </script>
+  </body>
+</html>
