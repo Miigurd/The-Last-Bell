@@ -470,6 +470,11 @@
             "linear-gradient( rgba(255,255,255,0), rgba(255,255,255,0))";
       }
 
+      function setImage(src) {
+        const img = document.querySelector(".visual img");
+        img.src = src;
+      }
+
       // Game flow
       function startGame() {
         startOverlay.style.display = "none";
@@ -477,6 +482,7 @@
         state.ended = false;
         state.steps = 0;
         setMood("neutral");
+        setImage("Asia.png");
         goToScene("start");
         beep(880, 0.08, 0.03);
       }
@@ -503,15 +509,22 @@
       }
 
       function handleChoice(choiceId) {
-        // lock choices momentarily
         clearChoices();
-        // small delay to mimic reading & emotional weight
+
         setTimeout(() => {
-          if (choiceId === "honest" || choiceId === "lie") {
-            goToScene(choiceId);
+          // First choice (branch selection)
+          if (choiceId === "honest") {
+            setImage("CHa.png"); // 👈 change image here
+            goToScene("honest");
             return;
           }
-          // Branch A outcomes
+          if (choiceId === "lie") {
+            setImage("CHb.png"); // 👈 change image here
+            goToScene("lie");
+            return;
+          }
+
+          // Outcomes for A branch
           if (choiceId === "ask_help") {
             endGame("A1");
             return;
@@ -520,7 +533,8 @@
             endGame("A2");
             return;
           }
-          // Branch B outcomes
+
+          // Outcomes for B branch
           if (choiceId === "make_excuse") {
             endGame("B1");
             return;
